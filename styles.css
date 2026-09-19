@@ -243,9 +243,38 @@ h1 {
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
-  text-align: center;
   font-size: 0.9rem;
   color: var(--text-muted);
+}
+
+.app-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-clear-completed {
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-clear-completed:hover:not(:disabled),
+.btn-clear-completed:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border-color: var(--danger);
+}
+
+.btn-clear-completed:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ---------- 無障礙：僅供螢幕閱讀器 ---------- */
