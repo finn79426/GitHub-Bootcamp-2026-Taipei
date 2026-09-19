@@ -2,6 +2,7 @@
 // 純前端實作，不使用任何框架或套件。資料存在瀏覽器的 localStorage。
 
 const STORAGE_KEY = 'workshop-todos';
+const FILTER_KEY = 'workshop-filter';
 
 // 取得畫面上會用到的元素
 const form = document.getElementById('todo-form');
@@ -9,13 +10,14 @@ const input = document.getElementById('todo-input');
 const list = document.getElementById('todo-list');
 const emptyState = document.getElementById('empty-state');
 const remainingCount = document.getElementById('remaining-count');
+const clearCompletedButton = document.getElementById('clear-completed');
 const themeToggle = document.getElementById('theme-toggle');
 const filterButtons = document.querySelectorAll('.filter-button');
 
 // 所有待辦事項都放在這個陣列裡
 // 每一筆的格式：{ id: '169...', text: '買牛奶', completed: false }
 let todos = loadTodos();
-let currentFilter = 'all';
+let currentFilter = loadFilter();
 
 const THEME_KEY = 'workshop-theme';
 const colorScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -24,6 +26,11 @@ const emptyMessages = {
   active: '目前沒有未完成的待辦事項。',
   completed: '目前沒有已完成的待辦事項。資料還在，只是被目前篩選條件過濾掉了。',
 };
+
+function loadFilter() {
+  const savedFilter = localStorage.getItem(FILTER_KEY);
+  return ['all', 'active', 'completed'].includes(savedFilter) ? savedFilter : 'all';
+}
 
 // ---------- 資料存取 ----------
 
@@ -121,7 +128,15 @@ function render() {
 
   // 更新未完成數量
   const remaining = todos.filter((todo) => !todo.completed).length;
+  const completed = todos.filter((todo) => todo.completed).length;
   remainingCount.textContent = `未完成:${remaining} 項`;
+
+  clearCompletedButton.hidden = completed === 0;
+  clearCompletedButton.disabled = completed === 0;
+  clearCompletedButton.setAttribute(
+    'aria-label',
+    completed === 0 ? '目前沒有已完成項目可清除' : '清除所有已完成項目'
+  );
 }
 
 // ---------- 操作行為 ----------
@@ -158,6 +173,19 @@ function deleteTodo(id) {
   render();
 }
 
+/** 一次刪除所有已完成事項，並在確認後更新畫面與 localStorage */
+function clearCompletedTodos() {
+  const completedCount = todos.filter((todo) => todo.completed).length;
+  if (completedCount === 0) return;
+
+  const confirmed = window.confirm('確定要清除所有已完成的項目嗎？');
+  if (!confirmed) return;
+
+  todos = todos.filter((todo) => !todo.completed);
+  saveTodos();
+  render();
+}
+
 // ---------- 事件綁定 ----------
 
 // 送出表單 = 新增待辦
@@ -186,6 +214,8 @@ list.addEventListener('click', (event) => {
   }
 });
 
+clearCompletedButton.addEventListener('click', clearCompletedTodos);
+
 // 切換淺色 / 深色模式並記住使用者選擇
 themeToggle.addEventListener('click', () => {
   const nextTheme = getCurrentTheme() === 'dark' ? 'light' : 'dark';
@@ -202,6 +232,7 @@ colorScheme.addEventListener('change', () => {
 filterButtons.forEach((button) => {
   button.addEventListener('click', () => {
     currentFilter = button.dataset.filter;
+    localStorage.setItem(FILTER_KEY, currentFilter);
     filterButtons.forEach((filterButton) => {
       filterButton.classList.toggle('active', filterButton === button);
       filterButton.setAttribute('aria-pressed', filterButton === button);
@@ -212,5 +243,9 @@ filterButtons.forEach((button) => {
 
 // 頁面載入時先畫一次
 applyTheme();
-filterButtons[0].setAttribute('aria-pressed', 'true');
+filterButtons.forEach((button) => {
+  const isActive = button.dataset.filter === currentFilter;
+  button.classList.toggle('active', isActive);
+  button.setAttribute('aria-pressed', isActive);
+});
 render();
